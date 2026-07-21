@@ -42,9 +42,37 @@
     padding:0 20px 80px;
   }
 
+  /* ---------- top nav ---------- */
+  .topnav{
+    display:flex;
+    justify-content:flex-end;
+    padding:20px 0 0;
+  }
+
+  .back-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--bg-elev);
+    border:1px solid var(--border);
+    color:var(--text-dim);
+    text-decoration:none;
+    font-size:14px;
+    font-weight:500;
+    padding:9px 16px;
+    border-radius:var(--radius-pill);
+    transition:background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .back-btn:hover{
+    background:var(--bg-elev-3);
+    color:var(--text);
+    border-color:#3a3a3d;
+  }
+  .back-btn svg{width:15px; height:15px; stroke:currentColor;}
+
   /* ---------- top intro ---------- */
   .intro{
-    padding:56px 0 32px;
+    padding:36px 0 32px;
     border-bottom:1px solid var(--border-soft);
     margin-bottom:28px;
   }
@@ -182,6 +210,7 @@
   }
   .sort-toggle:hover{background:var(--bg-elev-3); color:var(--text);}
   .sort-toggle svg{width:13px; height:13px; stroke:currentColor;}
+  .sort-toggle:disabled{opacity:0.4; cursor:default;}
 
   /* ---------- file list ---------- */
   .file-list{
@@ -286,27 +315,45 @@
     stroke:var(--black);
   }
 
-  /* ---------- empty state ---------- */
-  .empty-state{
+  /* ---------- state screens (loading / empty / error) ---------- */
+  .state-screen{
     text-align:center;
     padding:60px 20px;
     color:var(--text-mute);
     display:none;
   }
-  .empty-state.show{display:block;}
-  .empty-state svg{
+  .state-screen.show{display:block;}
+  .state-screen svg{
     width:32px;
     height:32px;
     stroke:var(--text-mute);
     margin-bottom:14px;
   }
-  .empty-state p{
+  .state-screen p{
     font-size:15px;
-    margin:0;
+    margin:0 0 4px;
+  }
+  .state-screen .state-sub{
+    font-size:13px;
+    color:var(--text-mute);
+    max-width:380px;
+    margin:6px auto 0;
+    line-height:1.5;
   }
 
+  .spinner{
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    border:2px solid var(--border);
+    border-top-color:var(--text-dim);
+    margin:0 auto 16px;
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
   @media (max-width:560px){
-    .intro{padding:40px 0 24px;}
+    .intro{padding:28px 0 24px;}
     .intro h1{font-size:26px;}
     .controls{flex-direction:column;}
     .date-field{justify-content:space-between;}
@@ -328,10 +375,17 @@
 
 <div class="wrap">
 
+  <div class="topnav">
+    <a class="back-btn" href="https://gmiki.site" title="Назад на gmiki.site">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+      gmiki.site
+    </a>
+  </div>
+
   <div class="intro">
     <p class="intro-label">Файлотека</p>
     <h1>Материалы со стрима</h1>
-    <p>Здесь лежит всё, чем я пользуюсь в эфире: ресурспак, шейдеры, конфиги и оверлеи. Список обновляется после каждого стрима — новые файлы появляются сверху.</p>
+    <p>Здесь лежит всё, чем я пользуюсь в эфире: ресурспак, шейдеры, конфиги и оверлеи. Список подтягивается прямо из репозитория на GitHub — новые файлы появляются сами, как только я их туда заливаю.</p>
   </div>
 
   <div class="controls">
@@ -347,8 +401,8 @@
   </div>
 
   <div class="meta-bar">
-    <span id="resultCount">— файлов</span>
-    <button class="sort-toggle" id="sortToggle" type="button">
+    <span id="resultCount">Загрузка…</span>
+    <button class="sort-toggle" id="sortToggle" type="button" disabled>
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 12h10M4 6h16M10 18h4"/></svg>
       <span id="sortLabel">Сначала новые</span>
     </button>
@@ -356,33 +410,53 @@
 
   <div class="file-list" id="fileList"></div>
 
-  <div class="empty-state" id="emptyState">
+  <div class="state-screen" id="loadingState">
+    <div class="spinner"></div>
+    <p>Загружаю файлы из репозитория…</p>
+  </div>
+
+  <div class="state-screen" id="emptyState">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-    <p>Ничего не найдено. Попробуй изменить запрос или дату.</p>
+    <p>Ничего не найдено.</p>
+    <p class="state-sub">Попробуй изменить запрос или дату.</p>
+  </div>
+
+  <div class="state-screen" id="errorState">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>
+    <p id="errorTitle">Не удалось загрузить список файлов.</p>
+    <p class="state-sub" id="errorSub"></p>
   </div>
 
 </div>
 
 <script>
   /* =========================================================================
-     СПИСОК ФАЙЛОВ
-     Дополняй вручную под содержимое своей папки: name, ext, size (байты),
-     updated (YYYY-MM-DD), href (ссылка/путь к файлу).
+     НАСТРОЙКА РЕПОЗИТОРИЯ
+     Вписываешь один раз свои данные — дальше список файлов подтягивается
+     сам через GitHub API, ничего вручную вбивать не нужно.
+
+     OWNER  — твой логин или организация на GitHub, например "ivanpetrov"
+     REPO   — имя репозитория, например "stream-files"
+     BRANCH — ветка, обычно "main" (иногда "master")
+     PATH   — папка внутри репозитория с файлами. Пусто ("") — файлы лежат
+              в корне репозитория. Пример: "files" — если файлы в /files
      ========================================================================= */
-  const FILES = [
-    { name: "resourcepack-2026.zip",     ext: "zip", size: 88080384,  updated: "2026-07-20", href: "resourcepack-2026.zip" },
-    { name: "shaders-complementary.zip", ext: "zip", size: 222298112, updated: "2026-07-15", href: "shaders-complementary.zip" },
-    { name: "modpack-configs.zip",       ext: "zip", size: 4194304,   updated: "2026-07-10", href: "modpack-configs.zip" },
-    { name: "overlay-pack.zip",          ext: "zip", size: 18874368,  updated: "2026-07-05", href: "overlay-pack.zip" },
-    { name: "crosshair.png",             ext: "png", size: 12288,     updated: "2026-07-01", href: "crosshair.png" },
-    { name: "keybinds.txt",              ext: "txt", size: 2048,      updated: "2026-06-28", href: "keybinds.txt" }
-  ];
+  const OWNER  = "femboo";
+  const REPO   = "Minecraft";
+  const BRANCH = "main";
+  const PATH   = "";
+
+  // Расширения, которые не показываем в списке (сам сайт и служебные файлы)
+  const EXCLUDED = ["index.html", "readme.md", ".gitignore", "license", "license.md"];
 
   const ICONS = {
     zip: `<path d="M3 7h18M8 3h8M12 7v14M9 10h.01M9 13h.01M9 16h.01"/><rect x="4" y="7" width="16" height="14" rx="2"/>`,
+    rar: `<path d="M3 7h18M8 3h8M12 7v14M9 10h.01M9 13h.01M9 16h.01"/><rect x="4" y="7" width="16" height="14" rx="2"/>`,
+    "7z": `<path d="M3 7h18M8 3h8M12 7v14M9 10h.01M9 13h.01M9 16h.01"/><rect x="4" y="7" width="16" height="14" rx="2"/>`,
     png: `<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 15-5-5L5 21"/>`,
     jpg: `<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 15-5-5L5 21"/>`,
     jpeg:`<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 15-5-5L5 21"/>`,
+    gif: `<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 15-5-5L5 21"/>`,
     txt: `<path d="M14 3v5h5"/><path d="M6 3h8l6 6v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M8 13h8M8 17h5"/>`,
     default: `<path d="M14 3v5h5"/><path d="M6 3h8l6 6v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/>`
   };
@@ -402,7 +476,7 @@
   }
 
   function formatDate(iso){
-    const d = new Date(iso + "T00:00:00");
+    const d = new Date(iso);
     return d.toLocaleDateString("ru-RU", { day:"2-digit", month:"2-digit", year:"numeric" });
   }
 
@@ -412,24 +486,36 @@
   const sortToggle = document.getElementById("sortToggle");
   const sortLabel = document.getElementById("sortLabel");
   const fileList = document.getElementById("fileList");
+  const loadingState = document.getElementById("loadingState");
   const emptyState = document.getElementById("emptyState");
+  const errorState = document.getElementById("errorState");
+  const errorTitle = document.getElementById("errorTitle");
+  const errorSub = document.getElementById("errorSub");
   const resultCount = document.getElementById("resultCount");
 
+  let ALL_FILES = [];
   let sortDesc = true;
+
+  function pluralFiles(n){
+    const mod10 = n % 10, mod100 = n % 100;
+    if(mod10 === 1 && mod100 !== 11) return "файл";
+    if([2,3,4].includes(mod10) && ![12,13,14].includes(mod100)) return "файла";
+    return "файлов";
+  }
 
   function render(){
     const query = searchInput.value.trim().toLowerCase();
     const minDate = dateInput.value;
 
-    let items = FILES.filter(f => {
+    let items = ALL_FILES.filter(f => {
       const matchesQuery = !query || f.name.toLowerCase().includes(query);
-      const matchesDate = !minDate || f.updated >= minDate;
+      const matchesDate = !minDate || f.updatedISO.slice(0,10) >= minDate;
       return matchesQuery && matchesDate;
     });
 
     items.sort((a, b) => sortDesc
-      ? b.updated.localeCompare(a.updated)
-      : a.updated.localeCompare(b.updated));
+      ? b.updatedISO.localeCompare(a.updatedISO)
+      : a.updatedISO.localeCompare(b.updatedISO));
 
     fileList.innerHTML = "";
 
@@ -442,23 +528,93 @@
           <span class="file-name">${f.name}</span>
           <span class="file-sub">${f.ext.toUpperCase()}<span class="dot"></span>${formatSize(f.size)}</span>
         </div>
-        <span class="file-date">${formatDate(f.updated)}</span>
+        <span class="file-date">${formatDate(f.updatedISO)}</span>
         <a class="download-btn" href="${f.href}" download title="Скачать">${downloadIcon}</a>
       `;
       fileList.appendChild(row);
     });
 
-    emptyState.classList.toggle("show", items.length === 0);
+    emptyState.classList.toggle("show", items.length === 0 && ALL_FILES.length > 0);
+    fileList.style.display = items.length === 0 ? "none" : "flex";
+
     resultCount.textContent = items.length === 0
       ? "Ничего не найдено"
       : `${items.length} ${pluralFiles(items.length)}`;
   }
 
-  function pluralFiles(n){
-    const mod10 = n % 10, mod100 = n % 100;
-    if(mod10 === 1 && mod100 !== 11) return "файл";
-    if([2,3,4].includes(mod10) && ![12,13,14].includes(mod100)) return "файла";
-    return "файлов";
+  async function fetchJSON(url){
+    const res = await fetch(url, { headers:{ "Accept":"application/vnd.github+json" } });
+    if(!res.ok){
+      const err = new Error("request_failed");
+      err.status = res.status;
+      throw err;
+    }
+    return res.json();
+  }
+
+  async function getLastUpdated(path){
+    try{
+      const commits = await fetchJSON(
+        `https://api.github.com/repos/${OWNER}/${REPO}/commits?path=${encodeURIComponent(path)}&sha=${BRANCH}&per_page=1`
+      );
+      if(commits && commits[0] && commits[0].commit && commits[0].commit.committer){
+        return commits[0].commit.committer.date;
+      }
+    }catch(e){ /* falls through to null */ }
+    return null;
+  }
+
+  async function loadFiles(){
+    loadingState.classList.add("show");
+    errorState.classList.remove("show");
+    fileList.style.display = "none";
+
+    try{
+      const contentsUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}?ref=${BRANCH}`;
+      const contents = await fetchJSON(contentsUrl);
+
+      const rawFiles = (Array.isArray(contents) ? contents : [contents])
+        .filter(item => item.type === "file")
+        .filter(item => !EXCLUDED.includes(item.name.toLowerCase()));
+
+      const withDates = await Promise.all(rawFiles.map(async item => {
+        const fullPath = PATH ? `${PATH}/${item.name}` : item.name;
+        const updated = await getLastUpdated(fullPath);
+        const ext = (item.name.split(".").pop() || "").toLowerCase();
+        return {
+          name: item.name,
+          ext: ext || "file",
+          size: item.size || 0,
+          href: item.download_url,
+          updatedISO: updated || new Date(0).toISOString()
+        };
+      }));
+
+      ALL_FILES = withDates;
+      loadingState.classList.remove("show");
+      sortToggle.disabled = false;
+      render();
+
+    }catch(e){
+      loadingState.classList.remove("show");
+      errorState.classList.add("show");
+      fileList.style.display = "none";
+      resultCount.textContent = "Ошибка загрузки";
+
+      if(OWNER === "your-github-username" || REPO === "your-repo-name"){
+        errorTitle.textContent = "Репозиторий не настроен.";
+        errorSub.textContent = "Открой код страницы и впиши свои OWNER, REPO, BRANCH и PATH в блоке «НАСТРОЙКА РЕПОЗИТОРИЯ» в конце файла.";
+      } else if(e.status === 403){
+        errorTitle.textContent = "GitHub API временно ограничил запросы.";
+        errorSub.textContent = "Без авторизации доступно 60 запросов в час на IP. Подожди немного и обнови страницу.";
+      } else if(e.status === 404){
+        errorTitle.textContent = "Репозиторий или папка не найдены.";
+        errorSub.textContent = "Проверь значения OWNER, REPO, BRANCH и PATH — репозиторий должен быть публичным.";
+      } else {
+        errorTitle.textContent = "Не удалось загрузить список файлов.";
+        errorSub.textContent = "Проверь подключение к интернету и настройки репозитория, затем обнови страницу.";
+      }
+    }
   }
 
   searchInput.addEventListener("input", render);
@@ -471,7 +627,7 @@
     render();
   });
 
-  render();
+  loadFiles();
 </script>
 
 </body>
